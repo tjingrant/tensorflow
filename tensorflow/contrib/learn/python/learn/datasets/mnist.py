@@ -177,6 +177,7 @@ class DataSet(object):
     start = self._index_in_epoch
     # Shuffle for the first epoch
     if self._epochs_completed == 0 and start == 0 and shuffle:
+      #print "shuffle"
       perm0 = numpy.arange(self._num_examples)
       numpy.random.shuffle(perm0)
       self._images = self.images[perm0]
@@ -261,13 +262,13 @@ def read_data_sets(train_dir,
   train_images = train_images[validation_size:]
   train_labels = train_labels[validation_size:]
 
-  
+
   options = dict(dtype=dtype, reshape=reshape, seed=seed)
-  
+
   train = DataSet(train_images, train_labels, **options)
   validation = DataSet(validation_images, validation_labels, **options)
   test = DataSet(test_images, test_labels, **options)
-  
+
   return base.Datasets(train=train, validation=validation, test=test)
 
 

@@ -1102,6 +1102,23 @@ transpose_a: If true, "a" is transposed before multiplication.
 transpose_b: If true, "b" is transposed before multiplication.
 )doc");
 
+REGISTER_OP("FusedMatMulAddRelu")
+    .Input("a: T")
+    .Input("b: T")
+    .Input("c: T")
+    .Input("norm_b: T")
+    .Input("d_b_l: T")
+    .Input("l: T")
+    .Output("product: T")
+    .Attr("transpose_a: bool = false")
+    .Attr("transpose_b: bool = false")
+    .Attr("T: {float}")
+    .SetShapeFn(shape_inference::MatMulShape)
+    .Doc(R"doc(
+Multiply the matrix "a" by the matrix "b". Then add matrix "c" to the
+resultant matrix. Finally, apply relu activation to the result.
+)doc");
+
 REGISTER_OP("SparseMatMul")
     .Input("a: Ta")
     .Input("b: Tb")

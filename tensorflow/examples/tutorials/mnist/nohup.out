@@ -1,0 +1,30 @@
+2017-07-26 14:50:55.940457: I tensorflow/core/common_runtime/gpu/gpu_device.cc:940] Found device 0 with properties: 
+name: Tesla K40c
+major: 3 minor: 5 memoryClockRate (GHz) 0.745
+pciBusID 0002:01:00.0
+Total memory: 11.17GiB
+Free memory: 11.10GiB
+2017-07-26 14:50:55.940528: I tensorflow/core/common_runtime/gpu/gpu_device.cc:961] DMA: 0 
+2017-07-26 14:50:55.940542: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 0:   Y 
+2017-07-26 14:50:55.940564: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Creating TensorFlow device (/gpu:0) -> (device: 0, name: Tesla K40c, pci bus id: 0002:01:00.0)
+Extracting /tmp/tensorflow/mnist/input_data/train-images-idx3-ubyte.gz
+Extracting /tmp/tensorflow/mnist/input_data/train-labels-idx1-ubyte.gz
+Extracting /tmp/tensorflow/mnist/input_data/t10k-images-idx3-ubyte.gz
+Extracting /tmp/tensorflow/mnist/input_data/t10k-labels-idx1-ubyte.gz
+Traceback (most recent call last):
+  File "mnist_softmax.py", line 107, in <module>
+    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+  File "/localhd/tjin/tensorflow_latest/local/lib/python2.7/site-packages/tensorflow/python/platform/app.py", line 48, in run
+    _sys.exit(main(_sys.argv[:1] + flags_passthrough))
+  File "mnist_softmax.py", line 70, in main
+    if GET_LANDMARK:
+NameError: global name 'GET_LANDMARK' is not defined
+2017-07-26 14:51:46.546742: I tensorflow/core/common_runtime/gpu/gpu_device.cc:940] Found device 0 with properties: 
+name: Tesla K40c
+major: 3 minor: 5 memoryClockRate (GHz) 0.745
+pciBusID 0002:01:00.0
+Total memory: 11.17GiB
+Free memory: 11.10GiB
+2017-07-26 14:51:46.546799: I tensorflow/core/common_runtime/gpu/gpu_device.cc:961] DMA: 0 
+2017-07-26 14:51:46.546813: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 0:   Y 
+2017-07-26 14:51:46.546835: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Creating TensorFlow device (/gpu:0) -> (device: 0, name: Tesla K40c, pci bus id: 0002:01:00.0)

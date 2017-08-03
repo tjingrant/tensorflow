@@ -310,6 +310,97 @@ class MatMulOp : public OpKernel {
   bool transpose_b_;
 };
 
+
+template <typename Device, typename T, bool USE_CUBLAS>
+class FusedMatMulAddReluOp : public OpKernel {
+ public:
+  explicit FusedMatMulAddReluOp(OpKernelConstruction* ctx) : OpKernel(ctx) {
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("transpose_a", &transpose_a_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("transpose_b", &transpose_b_));
+  }
+
+  void Compute(OpKernelContext* ctx) override {
+    const Tensor& A = ctx->input(0);
+    const Tensor& B = ctx->input(1);
+    const Tensor& C = ctx->input(2);
+    const Tensor& norm_B = ctx->input(3);
+    const Tensor& d_B_L = ctx->input(4);
+    const Tensor& L = ctx->input(5);
+
+    auto A_ptr = A.template flat<T>().data();
+    auto B_ptr = B.template flat<T>().data();
+    auto C_ptr = C.template flat<T>().data();
+    auto norm_B_ptr = norm_B.template flat<T>().data();
+    auto d_B_L_ptr = d_B_L.template flat<T>().data();
+    auto L_ptr = L.template flat<T>().data();
+
+    VLOG(3) << "Tian Jin: using fused mat mul add relu op.";
+
+    Eigen::array<Eigen::IndexPair<Eigen::DenseIndex>, 1> dim_pair;
+    dim_pair[0].first = transpose_a_ ? 0 : 1;
+    dim_pair[0].second = transpose_b_ ? 1 : 0;
+
+    int a_dim_remaining = 1 - dim_pair[0].first;
+    int b_dim_remaining = 1 - dim_pair[0].second;
+    TensorShape out_shape(
+        {A.dim_size(a_dim_remaining), B.dim_size(b_dim_remaining)});
+
+    int m = A.dim_size(a_dim_remaining);
+    int n = B.dim_size(b_dim_remaining);
+    int k = A.dim_size(dim_pair[0].first);
+    int num_landmarks = L.dim_size(0);
+
+    VLOG(3) << "m=" << m;
+    VLOG(3) << "n=" << n;
+    VLOG(3) << "k=" << k;
+    VLOG(3) << "num_landmark=" << L.dim_size(0);
+
+    Tensor* out = nullptr;
+    OP_REQUIRES_OK(ctx, ctx->allocate_output(0, out_shape, &out));
+
+    auto out_ptr = out->template flat<T>().data();
+    functor::FusedMatMulAddReluFunctor<T> functor_;
+
+    functor_.pre(ctx->eigen_device<GPUDevice>(),
+      A_ptr,
+      B_ptr,
+      C_ptr,
+      norm_B_ptr,
+      d_B_L_ptr,
+      L_ptr,
+      m,
+      n,
+      k,
+      num_landmarks,
+      out_ptr);
+
+    LaunchMatMul<Device, T, USE_CUBLAS>::launch(ctx, this, A, B, dim_pair, out);
+
+    functor_.post(ctx->eigen_device<GPUDevice>(),
+      A_ptr,
+      B_ptr,
+      C_ptr,
+      norm_B_ptr,
+      d_B_L_ptr,
+      L_ptr,
+      m,
+      n,
+      k,
+      num_landmarks,
+      out_ptr);
+  }
+
+ private:
+  bool transpose_a_;
+  bool transpose_b_;
+};
+
+REGISTER_KERNEL_BUILDER(                                           \
+    Name("FusedMatMulAddRelu")                                     \
+    .Device(DEVICE_GPU)                                            \
+    .TypeConstraint<float>("T"),                                       \
+    FusedMatMulAddReluOp<GPUDevice, float, true /* cublas, true by default */>);
+
 namespace functor {
 
 // Partial specialization MatMulFunctor<Device=CPUDevice, T>.
@@ -348,15 +439,15 @@ struct MatMulFunctor<SYCLDevice, T> {
       Name("MatMul").Device(DEVICE_CPU).TypeConstraint<T>("T").Label("eigen"), \
       MatMulOp<CPUDevice, T, false /* cublas, ignored for CPU */>)
 
-#define REGISTER_GPU(T)                                            \
-  REGISTER_KERNEL_BUILDER(                                         \
-      Name("MatMul").Device(DEVICE_GPU).TypeConstraint<T>("T"),    \
-      MatMulOp<GPUDevice, T, true /* cublas, true by default */>); \
-  REGISTER_KERNEL_BUILDER(Name("MatMul")                           \
-                              .Device(DEVICE_GPU)                  \
-                              .TypeConstraint<T>("T")              \
-                              .Label("cublas"),                    \
-                          MatMulOp<GPUDevice, T, true /* cublas */>)
+#define REGISTER_GPU(T)                                              \
+  REGISTER_KERNEL_BUILDER(                                           \
+      Name("MatMul").Device(DEVICE_GPU).TypeConstraint<T>("T"),      \
+      MatMulOp<GPUDevice, T, true /* cublas, true by default */>);   \
+  REGISTER_KERNEL_BUILDER(Name("MatMul")                             \
+                              .Device(DEVICE_GPU)                    \
+                              .TypeConstraint<T>("T")                \
+                              .Label("cublas"),                      \
+                          MatMulOp<GPUDevice, T, true /* cublas */>);
 
 #if defined(INTEL_MKL)
 // MKL does not support half and int32 types for matrix-multiplication, so

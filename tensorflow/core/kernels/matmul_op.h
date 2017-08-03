@@ -49,6 +49,41 @@ struct MatMulFunctor {
       const Eigen::array<Eigen::IndexPair<Eigen::DenseIndex>, 1>& dim_pair);
 };
 
+#ifdef GOOGLE_CUDA
+typedef Eigen::GpuDevice GPUDevice;
+
+template <typename T>
+struct FusedMatMulAddReluFunctor {
+  void pre(
+    const GPUDevice& d,
+    const T* A,
+    const T* B,
+    const T* C,
+    const T* norm_B,
+    const T* d_B_L,
+    const T* L,
+    int m,
+    int n,
+    int k,
+    int num_landmarks,
+    T* output);
+
+  void post(
+    const GPUDevice& d,
+    const T* A,
+    const T* B,
+    const T* C,
+    const T* norm_B,
+    const T* d_B_L,
+    const T* L,
+    int m,
+    int n,
+    int k,
+    int num_landmarks,
+    T* output);
+};
+#endif
+
 }  // end namespace functor
 }  // end namespace tensorflow
 

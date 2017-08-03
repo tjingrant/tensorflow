@@ -2381,6 +2381,10 @@ tf_kernel_library(
     ] + if_mkl([
         "mkl_matmul_op.cc",
     ]),
+    gpu_srcs = [
+        "matmul_op.h",
+        "matmul_op_gpu.cu.cc",
+    ],
     hdrs = ["matmul_op.h"],
     defines = select({
         ":xsmm": [
